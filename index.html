@@ -3,56 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>myutiliti - Pengurusan Bil Sekolah</title>
+    <title>myutiliti - Pengurusan Bil Sekolah (Supabase)</title>
     <!-- Memuatkan Tailwind CSS untuk penggayaan -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Memuatkan font Inter dari Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Memuatkan Pustaka Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* Menggunakan font Inter sebagai fon utama */
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        /* Animasi ringkas untuk paparan elemen */
-        .fade-in {
-            animation: fadeIn 0.5s ease-in-out;
-        }
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        /* Penggayaan untuk suis (toggle switch) */
-        .toggle-checkbox:checked {
-            right: 0;
-            border-color: #4F46E5;
-        }
-        .toggle-checkbox:checked + .toggle-label {
-            background-color: #4F46E5;
-        }
-        /* Sembunyikan anak panah pada input nombor */
+        .toggle-checkbox:checked + .toggle-label { background-color: #4F46E5; }
+        .dot { transition: transform 0.3s ease-in-out; }
+        .toggle-checkbox:checked ~ .dot { transform: translateX(1.5rem); }
         input[type=number]::-webkit-inner-spin-button,
-        input[type=number]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+        
+        /* Penggayaan untuk penunjuk memuat (loading spinner) */
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #4F46E5;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
         }
-        input[type=number] {
-            -moz-appearance: textfield;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(255, 255, 255, 0.8);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 flex items-center justify-center min-h-screen p-4">
 
+    <div id="loading-overlay" class="hidden">
+        <div class="loader"></div>
+    </div>
+
     <div class="w-full max-w-7xl mx-auto">
         <header class="text-center mb-8 relative">
             <h1 class="text-4xl font-bold text-indigo-700">myutiliti</h1>
             <button id="admin-login-button" class="absolute top-0 right-0 z-10 bg-white border border-slate-300 text-slate-600 font-semibold py-2 px-4 rounded-lg hover:bg-slate-100 hover:border-slate-400 transition text-sm flex items-center gap-2 shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M18 8a6 6 0 11-12 0 6 6 0 0112 0zM7 8a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 017 8zM11.25 8.75a.75.75 0 00-1.5 0v1.5a.75.75 0 001.5 0v-1.5z" clip-rule="evenodd" />
-                  <path d="M5.5 12.5a3.5 3.5 0 107 0h-7z" />
-                  <path fill-rule="evenodd" d="M2 14.5a7.5 7.5 0 0110.606-6.812.75.75 0 01.623 1.244 6 6 0 00-9.458 5.568.75.75 0 01-1.244-.624A7.5 7.5 0 012 14.5zM17.5 9.5a.75.75 0 00-1.5 0v1.518a6.001 6.001 0 00-4.68 4.906.75.75 0 001.492.152 4.501 4.501 0 018.376 0 .75.75 0 001.492-.152A6.001 6.001 0 0017.5 11.018V9.5z" clip-rule="evenodd" />
-                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 8a6 6 0 11-12 0 6 6 0 0112 0zM7 8a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 017 8zM11.25 8.75a.75.75 0 00-1.5 0v1.5a.75.75 0 001.5 0v-1.5z" clip-rule="evenodd" /><path d="M5.5 12.5a3.5 3.5 0 107 0h-7z" /><path fill-rule="evenodd" d="M2 14.5a7.5 7.5 0 0110.606-6.812.75.75 0 01.623 1.244 6 6 0 00-9.458 5.568.75.75 0 01-1.244-.624A7.5 7.5 0 012 14.5zM17.5 9.5a.75.75 0 00-1.5 0v1.518a6.001 6.001 0 00-4.68 4.906.75.75 0 001.492.152 4.501 4.501 0 018.376 0 .75.75 0 001.492-.152A6.001 6.001 0 0017.5 11.018V9.5z" clip-rule="evenodd" /></svg>
                 Admin
             </button>
         </header>
@@ -61,14 +69,11 @@
             <!-- BAHAGIAN 1: PENGESAHAN PENGGUNA BIASA -->
             <div id="verification-page">
                 <div class="grid md:grid-cols-2 gap-12 items-center">
-                    <!-- Kiri: Info Projek -->
                     <div class="text-center md:text-left">
-                         <h1 class="text-3xl font-bold text-slate-800">Selamat Datang ke myutiliti</h1>
+                        <h1 class="text-3xl font-bold text-slate-800">Selamat Datang ke myutiliti</h1>
                         <p class="text-slate-600 mt-4">Sistem Pengurusan Bil Utiliti Sekolah-sekolah Daerah Miri.</p>
                         <p class="text-sm text-slate-500 mt-2">Satu Projek Inovasi di bawah Unit ICT, Sektor Pengurusan.</p>
                     </div>
-
-                    <!-- Kanan: Borang Log Masuk -->
                     <div class="bg-slate-50 p-8 rounded-lg border border-slate-200">
                         <h2 class="text-2xl font-semibold mb-2 text-slate-800">Pendaftaran & Log Masuk</h2>
                         <p class="text-slate-600 mb-6">Sila masukkan Kod Sekolah rasmi untuk meneruskan.</p>
@@ -80,7 +85,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div id="school-status-section" class="mt-12">
                     <h3 class="text-xl font-semibold text-center mb-4">Status Pengisian Bil Sekolah</h3>
                     <div class="flex justify-center items-center gap-2 mb-4">
@@ -93,7 +97,7 @@
                             <tbody id="school-status-tbody"></tbody>
                         </table>
                     </div>
-                     <p class="text-xs text-center text-slate-500 mt-2">Nota: Paparan di bawah adalah data yang disimpan dalam pelayar ini.</p>
+                    <p class="text-xs text-center text-slate-500 mt-2">Nota: Paparan di bawah adalah data yang disimpan dalam pangkalan data.</p>
                 </div>
             </div>
 
@@ -115,16 +119,14 @@
                         <p id="dashboard-school-code" class="text-slate-600 font-bold text-indigo-700"></p>
                     </div>
                     <div class="flex items-center gap-4">
-                         <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2">
                             <label for="year-selector" class="font-medium">Tahun:</label>
                             <select id="year-selector" class="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"></select>
                         </div>
                         <button id="edit-settings-button" class="bg-slate-200 text-slate-700 font-semibold py-2 px-4 rounded-lg hover:bg-slate-300 transition">Ubah Tetapan</button>
-                         <button id="logout-button" class="bg-red-100 text-red-700 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition">Log Keluar</button>
+                        <button id="logout-button" class="bg-red-100 text-red-700 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition">Log Keluar</button>
                     </div>
                 </div>
-
-                <!-- Kad Ringkasan -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                     <div class="bg-slate-50 p-5 rounded-xl border border-slate-200">
                         <h4 class="text-sm font-medium text-slate-500">Utiliti Aktif</h4>
@@ -136,21 +138,16 @@
                     </div>
                     <div class="bg-slate-50 p-5 rounded-xl border border-slate-200">
                         <h4 id="summary-current-month-title" class="text-sm font-medium text-slate-500">Status Bulan Semasa</h4>
-                        <div id="summary-current-month-status">
-                            <!-- Kandungan dijana oleh JS -->
-                        </div>
+                        <div id="summary-current-month-status"></div>
                     </div>
                 </div>
-
-                <!-- Jadual Bil -->
-                 <div class="bg-white rounded-xl shadow-md border">
+                <div class="bg-white rounded-xl shadow-md border">
                     <h3 class="text-lg font-semibold p-4 border-b border-slate-200">Rekod Bil Bulanan</h3>
                     <div class="overflow-x-auto">
                         <div id="billing-table-container"></div>
                     </div>
-                 </div>
-
-                 <div class="mt-8 pt-6 border-t border-slate-200 flex justify-end">
+                </div>
+                <div class="mt-8 pt-6 border-t border-slate-200 flex justify-end">
                     <button id="save-bills-button" class="bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300">Simpan Rekod Bil</button>
                 </div>
             </div>
@@ -173,33 +170,22 @@
                         <button id="admin-logout-button" class="bg-red-100 text-red-700 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition">Log Keluar Admin</button>
                     </div>
                 </div>
-                
                 <div id="admin-school-list-container" class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-6">
                     <div>
                         <h3 class="text-lg font-semibold mb-4 text-green-700 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                            </svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
                             Sekolah Selesai
                         </h3>
-                        <div id="admin-completed-school-list" class="space-y-2">
-                            <!-- List of completed schools -->
-                        </div>
+                        <div id="admin-completed-school-list" class="space-y-2"></div>
                     </div>
                     <div>
                         <h3 class="text-lg font-semibold mb-4 text-orange-700 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                              <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                            </svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
                             Sekolah Belum Selesai
                         </h3>
-                        <div id="admin-incomplete-school-list" class="space-y-2">
-                            <!-- List of incomplete schools -->
-                        </div>
+                        <div id="admin-incomplete-school-list" class="space-y-2"></div>
                     </div>
                 </div>
-
-
                 <div id="admin-summary-status-section" class="mt-12">
                     <h3 class="text-xl font-semibold text-center mb-4">Jadual Status Keseluruhan</h3>
                     <p class="text-center text-sm text-slate-500 mb-4">Klik pada mana-mana penanda status untuk melihat butiran.</p>
@@ -210,10 +196,9 @@
                         </table>
                     </div>
                 </div>
-
             </div>
 
-             <!-- BAHAGIAN 5: PAPARAN ADMIN - SEMAKAN SEKOLAH -->
+            <!-- BAHAGIAN 5: PAPARAN ADMIN - SEMAKAN SEKOLAH -->
             <div id="admin-school-view-page" class="hidden">
                 <div class="flex justify-between items-center mb-6">
                     <div>
@@ -232,7 +217,6 @@
         </footer>
 
         <div id="toast-notification" class="fixed bottom-5 right-5 bg-green-500 text-white py-3 px-6 rounded-lg shadow-xl opacity-0 translate-y-10 transition-all duration-300"></div>
-
     </div>
 
     <!-- Modal Log Masuk Admin -->
@@ -257,12 +241,10 @@
     <div id="details-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-full overflow-y-auto">
             <div class="flex justify-between items-center mb-4 pb-4 border-b">
-                 <h2 id="details-modal-title" class="text-xl font-bold">Butiran Bil</h2>
-                 <button id="close-details-modal" class="text-slate-500 hover:text-slate-800">&times;</button>
+                <h2 id="details-modal-title" class="text-xl font-bold">Butiran Bil</h2>
+                <button id="close-details-modal" class="text-slate-500 hover:text-slate-800 text-3xl font-bold leading-none">&times;</button>
             </div>
-            <div id="details-modal-body" class="space-y-4">
-                <!-- Kandungan dijana oleh JS -->
-            </div>
+            <div id="details-modal-body" class="space-y-4"></div>
         </div>
     </div>
     
@@ -275,7 +257,7 @@
                     <label for="new-school-code" class="block text-sm font-medium text-slate-700">Kod Sekolah</label>
                     <input type="text" id="new-school-code" placeholder="Cth: YBB4106" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                 </div>
-                 <div>
+                <div>
                     <label for="new-school-name" class="block text-sm font-medium text-slate-700">Nama Sekolah</label>
                     <input type="text" id="new-school-name" placeholder="Cth: SK BARU MIRI" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                 </div>
@@ -289,662 +271,464 @@
     </div>
 
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    // Rujukan elemen
-    const pages = {
-        verification: document.getElementById('verification-page'),
-        setup: document.getElementById('setup-page'),
-        dashboard: document.getElementById('dashboard-page'),
-        adminDashboard: document.getElementById('admin-dashboard-page'),
-        adminSchoolView: document.getElementById('admin-school-view-page'),
-    };
-    const schoolCodeInput = document.getElementById('school-code-input');
-    const verifyButton = document.getElementById('verify-button');
-    const saveSetupButton = document.getElementById('save-setup-button');
-    const dashboardSchoolCode = document.getElementById('dashboard-school-code');
-    const yearSelector = document.getElementById('year-selector');
-    const statusYearSelector = document.getElementById('status-year-selector');
-    const billingTableContainer = document.getElementById('billing-table-container');
-    const saveBillsButton = document.getElementById('save-bills-button');
-    const editSettingsButton = document.getElementById('edit-settings-button');
-    const logoutButton = document.getElementById('logout-button');
-    const adminLoginButton = document.getElementById('admin-login-button');
-    const adminLogoutButton = document.getElementById('admin-logout-button');
-    const adminSchoolListContainer = document.getElementById('admin-school-list-container');
-    const adminViewSchoolName = document.getElementById('admin-view-school-name');
-    const adminBillingTableContainer = document.getElementById('admin-billing-table-container');
-    const backToAdminDashboard = document.getElementById('back-to-admin-dashboard');
-    const toast = document.getElementById('toast-notification');
-    const schoolStatusSection = document.getElementById('school-status-section');
-    const schoolStatusTbody = document.getElementById('school-status-tbody');
-    const adminMonthSelector = document.getElementById('admin-month-selector');
-    const adminYearSelector = document.getElementById('admin-year-selector');
-    const adminSummaryStatusTbody = document.getElementById('admin-summary-status-tbody');
-    const printFormButton = document.getElementById('print-form-button');
-    const addSchoolButton = document.getElementById('add-school-button');
-    // Elemen Modal Admin Login
-    const adminLoginModal = document.getElementById('admin-login-modal');
-    const adminPasswordInput = document.getElementById('admin-password');
-    const cancelAdminLogin = document.getElementById('cancel-admin-login');
-    const submitAdminLogin = document.getElementById('submit-admin-login');
-    const adminLoginError = document.getElementById('admin-login-error');
-    // Elemen Modal Butiran
-    const detailsModal = document.getElementById('details-modal');
-    const detailsModalTitle = document.getElementById('details-modal-title');
-    const detailsModalBody = document.getElementById('details-modal-body');
-    const closeDetailsModal = document.getElementById('close-details-modal');
-    // Elemen Modal Tambah Sekolah
-    const addSchoolModal = document.getElementById('add-school-modal');
-    const newSchoolCodeInput = document.getElementById('new-school-code');
-    const newSchoolNameInput = document.getElementById('new-school-name');
-    const addSchoolError = document.getElementById('add-school-error');
-    const cancelAddSchool = document.getElementById('cancel-add-school');
-    const submitAddSchool = document.getElementById('submit-add-school');
+<script type="module">
+    // === Sambungan ke Supabase ===
+    const SUPABASE_URL = 'https://shtptijtnnzpyznrfyqp.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNodHB0aWp0bm56cHl6bnJmeXFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NzkyOTEsImV4cCI6MjA3NDQ1NTI5MX0.uV_thIwYbtpnTZ4Kh4pYpsmhafHYQQguzITZ1Ry2yLc';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    // === MULA KOD APLIKASI UTAMA ===
+    document.addEventListener('DOMContentLoaded', () => {
+        // Rujukan elemen
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const pages = {
+            verification: document.getElementById('verification-page'),
+            setup: document.getElementById('setup-page'),
+            dashboard: document.getElementById('dashboard-page'),
+            adminDashboard: document.getElementById('admin-dashboard-page'),
+            adminSchoolView: document.getElementById('admin-school-view-page'),
+        };
+        const schoolCodeInput = document.getElementById('school-code-input');
+        const verifyButton = document.getElementById('verify-button');
+        const saveSetupButton = document.getElementById('save-setup-button');
+        const dashboardSchoolCode = document.getElementById('dashboard-school-code');
+        const yearSelector = document.getElementById('year-selector');
+        const statusYearSelector = document.getElementById('status-year-selector');
+        const billingTableContainer = document.getElementById('billing-table-container');
+        const saveBillsButton = document.getElementById('save-bills-button');
+        const editSettingsButton = document.getElementById('edit-settings-button');
+        const logoutButton = document.getElementById('logout-button');
+        const adminLoginButton = document.getElementById('admin-login-button');
+        const adminLogoutButton = document.getElementById('admin-logout-button');
+        const adminSchoolListContainer = document.getElementById('admin-school-list-container');
+        const adminViewSchoolName = document.getElementById('admin-view-school-name');
+        const adminBillingTableContainer = document.getElementById('admin-billing-table-container');
+        const backToAdminDashboard = document.getElementById('back-to-admin-dashboard');
+        const toast = document.getElementById('toast-notification');
+        const schoolStatusTbody = document.getElementById('school-status-tbody');
+        const adminMonthSelector = document.getElementById('admin-month-selector');
+        const adminYearSelector = document.getElementById('admin-year-selector');
+        const adminSummaryStatusTbody = document.getElementById('admin-summary-status-tbody');
+        const printFormButton = document.getElementById('print-form-button');
+        const addSchoolButton = document.getElementById('add-school-button');
+        // Modal Admin Login
+        const adminLoginModal = document.getElementById('admin-login-modal');
+        const adminPasswordInput = document.getElementById('admin-password');
+        const cancelAdminLogin = document.getElementById('cancel-admin-login');
+        const submitAdminLogin = document.getElementById('submit-admin-login');
+        const adminLoginError = document.getElementById('admin-login-error');
+        // Modal Butiran
+        const detailsModal = document.getElementById('details-modal');
+        const detailsModalTitle = document.getElementById('details-modal-title');
+        const detailsModalBody = document.getElementById('details-modal-body');
+        const closeDetailsModal = document.getElementById('close-details-modal');
+        // Modal Tambah Sekolah
+        const addSchoolModal = document.getElementById('add-school-modal');
+        const newSchoolCodeInput = document.getElementById('new-school-code');
+        const newSchoolNameInput = document.getElementById('new-school-name');
+        const addSchoolError = document.getElementById('add-school-error');
+        const cancelAddSchool = document.getElementById('cancel-add-school');
+        const submitAddSchool = document.getElementById('submit-add-school');
 
-    const UTILITIES = [ { id: 'sesco', name: 'SESCO' }, { id: 'swb', name: 'Sarawak Water' }, { id: 'tm_phone', name: 'TM - Telefon' }, { id: 'tm_internet', name: 'TM - Internet' }];
-    const MONTHS = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
-    let SCHOOL_DB = {};
+        const UTILITIES = [ { id: 'sesco', name: 'SESCO' }, { id: 'swb', name: 'Sarawak Water' }, { id: 'tm_phone', name: 'TM - Telefon' }, { id: 'tm_internet', name: 'TM - Internet' }];
+        const MONTHS = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
+        let SCHOOL_DB = {};
+        let ALL_SCHOOL_DATA = []; // Cache untuk data semua sekolah
 
-    // --- Fungsi Bantuan ---
-    const showPage = (pageName) => { Object.values(pages).forEach(p => p.classList.add('hidden')); pages[pageName].classList.remove('hidden'); };
-    const showToast = (message) => { toast.textContent = message; toast.classList.remove('opacity-0', 'translate-y-10'); setTimeout(() => { toast.classList.add('opacity-0', 'translate-y-10'); }, 3000); };
-    const getSchoolData = (code, key) => JSON.parse(localStorage.getItem(`myutiliti_${code}_${key}`)) || null;
-    const setSchoolData = (code, key, data) => localStorage.setItem(`myutiliti_${code}_${key}`, JSON.stringify(data));
-    const loadSchoolDB = () => {
-        const storedDB = JSON.parse(localStorage.getItem('myutiliti_schoolDB'));
-        if (storedDB && Object.keys(storedDB).length > 10) { 
-            SCHOOL_DB = storedDB;
-        } else {
-            SCHOOL_DB = {
-                'YCC4108': 'SJK (CINA) CHIAW NAN',
-                'YCC4105': 'SJK (CINA) CHUNG HUA BAKAM',
-                'YCC4102': 'SJK (CINA) CHUNG HUA KROKOP',
-                'YCC4103': 'SJK (CINA) CHUNG HUA LUTONG',
-                'YCC4101': 'SJK (CINA) CHUNG HUA MIRI',
-                'YCC4104': 'SJK (CINA) CHUNG HUA PUJUT',
-                'YCC4107': 'SJK (CINA) CHUNG HUA TUDAN',
-                'YCC4106': 'SJK (CINA) CHUNG SAN MIRI',
-                'YBC4303': 'SJK (CINA) HUA KWONG',
-                'YBC4101': 'SJK (CINA) NORTH',
-                'YBC4103': 'SJK (CINA) TUKAU',
-                'YBA4103': 'SK ANCHI',
-                'YBB4302': 'SK BELURU CENTRAL',
-                'YBA4101': 'SK JALAN BINTANG',
-                'YBA4105': 'SK KG. BAKAM',
-                'YBB4101': 'SK KG. BERAYA',
-                'YBA4107': 'SK KG. LUAK',
-                'YBA4104': 'SK KUALA BARAM',
-                'YBA4114': 'SK KUALA BARAM II',
-                'YBE4107': 'SK LAMBIR VILLAGE',
-                'YBA4302': 'SK LEPONG AJAI',
-                'YBE4105': 'SK LUTONG',
-                'YBA4113': 'SK MERBAU',
-                'YBA4116': 'SK MIRI',
-                'YBA4106': 'SK PUJUT CORNER',
-                'YBA4108': 'SK PULAU MELAYU',
-                'YBA4102': 'SK RIAM BATU DUA',
-                'YBE4104': 'SK SAYED OTHMAN',
-                'YBA4115': 'SK SENADIN',
-                'YBB4358': 'SK SG. BAKAS',
-                'YBB4350': 'SK SG. BIAR',
-                'YBB4365': 'SK SG. BURI',
-                'YBB4321': 'SK SG. ENTULANG',
-                'YBB4355': 'SK SG. KELABIT',
-                'YBB4353': 'SK SG. LAONG',
-                'YBB4323': 'SK SG. LIAM',
-                'YBB4336': 'SK SG. SELEPIN',
-                'YBB4345': 'SK SG. SEPUTI',
-                'YBB4102': 'SK SOUTH',
-                'YCB4102': 'SK ST COLUMBA',
-                'YCB4101': 'SK ST JOSEPH',
-                'YBA4110': 'SK TEMENGGONG DATUK MUIP',
-                'YBA4111': 'SK TUDAN',
-                'YBA4117': 'SK TUDAN JAYA',
-                'YCA4101': 'SK AGAMA',
-                'YBA4112': 'SK PENDIDIKAN KHAS MIRI'
-            };
-            localStorage.setItem('myutiliti_schoolDB', JSON.stringify(SCHOOL_DB));
-        }
-    };
-
-    // --- Logik Render UI ---
-    const renderSetupPage = () => { 
-        const utilityListContainer = document.getElementById('utility-list');
-        utilityListContainer.innerHTML = '';
-        const schoolCode = localStorage.getItem('myutiliti_currentSchoolCode');
-        const savedUtilities = getSchoolData(schoolCode, 'utilities') || [];
-
-        UTILITIES.forEach(utility => {
-            const utilityDiv = document.createElement('div');
-            utilityDiv.className = 'p-4 border border-slate-200 rounded-lg';
-            utilityDiv.innerHTML = `<div class="flex justify-between items-center"><h3 class="text-lg font-semibold text-slate-700">${utility.name}</h3><button data-utility-id="${utility.id}" class="add-account-btn bg-indigo-100 text-indigo-700 font-semibold text-sm py-1 px-3 rounded-full hover:bg-indigo-200 transition">+ Tambah Akaun</button></div><div id="${utility.id}-accounts-container" class="mt-4 space-y-3"></div>`;
-            utilityListContainer.appendChild(utilityDiv);
-            const accountsForUtility = savedUtilities.filter(u => u.utilityId === utility.id);
-            accountsForUtility.length > 0 ? accountsForUtility.forEach(acc => addAccountRow(utility.id, acc.accountNumber, acc.isActive)) : addAccountRow(utility.id);
-        });
-    };
-    const addAccountRow = (utilityId, accountNumber = '', isActive = true) => { 
-        const container = document.getElementById(`${utilityId}-accounts-container`);
-        if (!container) return;
-        const accountRow = document.createElement('div');
-        accountRow.className = 'flex items-center gap-3 p-3 bg-slate-50 rounded-md';
-        accountRow.innerHTML = `<input type="text" value="${accountNumber}" placeholder="No. Akaun" class="account-number-input flex-grow px-3 py-2 border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500"><label class="flex items-center cursor-pointer"><div class="relative"><input type="checkbox" class="sr-only toggle-checkbox account-active-checkbox" ${isActive ? 'checked' : ''}><div class="block bg-slate-300 w-12 h-6 rounded-full toggle-label transition"></div><div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform"></div></div><div class="ml-3 text-sm font-medium text-slate-600">Aktif</div></label><button class="remove-account-btn text-slate-400 hover:text-red-500 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg></button>`;
-        container.appendChild(accountRow);
-        const checkbox = accountRow.querySelector('.toggle-checkbox');
-        const dot = accountRow.querySelector('.dot');
-        const label = accountRow.querySelector('.toggle-label');
-        const updateToggleStyle = () => { if (checkbox.checked) { dot.style.transform = 'translateX(1.5rem)'; label.classList.add('bg-indigo-600'); label.classList.remove('bg-slate-300'); } else { dot.style.transform = 'translateX(0)'; label.classList.remove('bg-indigo-600'); label.classList.add('bg-slate-300'); }};
-        checkbox.addEventListener('change', updateToggleStyle);
-        updateToggleStyle();
-    };
-
-    const renderDashboard = () => {
-        const schoolCode = localStorage.getItem('myutiliti_currentSchoolCode');
-        const schoolName = SCHOOL_DB[schoolCode] || schoolCode;
-        const utilities = getSchoolData(schoolCode, 'utilities') || [];
-        const selectedYear = yearSelector.value;
-        const bills = getSchoolData(schoolCode, 'bills') || {};
-        
-        dashboardSchoolCode.innerHTML = `${schoolName} <span class="text-sm font-normal text-slate-500">(${schoolCode})</span>`;
-
-        // Kalkulasi Kad Ringkasan
-        const activeUtilities = utilities.filter(u => u.isActive);
-        document.getElementById('summary-active-utilities').textContent = activeUtilities.length;
-        
-        let unfilledBillsCount = 0;
-        const currentYear = new Date().getFullYear().toString();
-        activeUtilities.forEach(util => {
-            const billKey = `${currentYear}-${util.utilityId}-${util.accountNumber}`;
-            const monthlyBills = (bills && bills[billKey]) ? bills[billKey] : [];
-            for (let i = 0; i < 12; i++) {
-                const billData = monthlyBills[i] || {};
-                if (!billData.amount || parseFloat(billData.amount) <= 0) {
-                    unfilledBillsCount++;
+        // --- Fungsi Bantuan ---
+        const showLoader = () => loadingOverlay.classList.remove('hidden');
+        const hideLoader = () => loadingOverlay.classList.add('hidden');
+        const showPage = (pageName) => { Object.values(pages).forEach(p => p.classList.add('hidden')); pages[pageName].classList.remove('hidden'); };
+        const showToast = (message, isError = false) => {
+            toast.textContent = message;
+            toast.className = `fixed bottom-5 right-5 text-white py-3 px-6 rounded-lg shadow-xl transition-all duration-300 ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+            toast.classList.remove('opacity-0', 'translate-y-10');
+            setTimeout(() => { toast.classList.add('opacity-0', 'translate-y-10'); }, 3000);
+        };
+        const populateYearSelectors = (selectors) => {
+            selectors.forEach(selector => {
+                if (!selector) return;
+                selector.innerHTML = '';
+                const currentYear = new Date().getFullYear();
+                for (let i = currentYear + 1; i >= currentYear - 5; i--) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = i;
+                    if (i === currentYear) option.selected = true;
+                    selector.appendChild(option);
                 }
-            }
-        });
-        document.getElementById('summary-unfilled-bills').textContent = unfilledBillsCount;
-
-        // Status Bulan Semasa
-        const now = new Date();
-        const currentMonthIndex = now.getMonth();
-        let pendingUtilities = [];
-        let allCurrentMonthBillsFilled = activeUtilities.length > 0;
-        if(activeUtilities.length === 0) allCurrentMonthBillsFilled = true;
-
-        activeUtilities.forEach(util => {
-            const billKey = `${currentYear}-${util.utilityId}-${util.accountNumber}`;
-            const billData = (bills[billKey] && bills[billKey][currentMonthIndex]) ? bills[billKey][currentMonthIndex] : {};
-            if (!billData.amount || parseFloat(billData.amount) <= 0) {
-                allCurrentMonthBillsFilled = false;
-                const utilInfo = UTILITIES.find(u => u.id === util.utilityId);
-                pendingUtilities.push(utilInfo.name);
-            }
-        });
-        
-        const currentMonthTitleEl = document.getElementById('summary-current-month-title');
-        const currentMonthStatusEl = document.getElementById('summary-current-month-status');
-
-        currentMonthTitleEl.textContent = `Status Bulan Semasa (${MONTHS[currentMonthIndex]})`;
-
-        if (allCurrentMonthBillsFilled) {
-            currentMonthStatusEl.innerHTML = `
-                <div class="flex items-center gap-2 mt-2">
-                    <span class="flex-shrink-0 bg-green-100 text-green-700 rounded-full p-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
-                    </span>
-                    <p class="text-lg font-bold text-green-700">Selesai</p>
-                </div>
-                <p class="text-xs text-slate-500 mt-1">Semua bil untuk bulan ini telah diisi.</p>
-            `;
-        } else {
-            currentMonthStatusEl.innerHTML = `
-                <div class="flex items-center gap-2 mt-2">
-                    <span class="flex-shrink-0 bg-orange-100 text-orange-700 rounded-full p-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
-                    </span>
-                    <p class="text-lg font-bold text-orange-700">Belum Selesai</p>
-                </div>
-                <p class="text-xs text-slate-500 mt-1">Sila isi bil untuk: ${pendingUtilities.join(', ')}.</p>
-            `;
-        }
-
-        
-        if (utilities.length === 0) { billingTableContainer.innerHTML = `<p class="p-4 text-center text-slate-500">Tiada data utiliti. Sila ke 'Ubah Tetapan Utiliti'.</p>`; return; }
-
-        let tableHTML = `<table class="w-full text-sm text-left text-slate-500"><thead class="text-xs text-slate-700 uppercase bg-slate-100"><tr><th scope="col" class="px-4 py-3 sticky left-0 bg-slate-100 z-10 min-w-[120px]">Utiliti</th><th scope="col" class="px-4 py-3 min-w-[150px]">No. Akaun</th><th scope="col" class="px-4 py-3">Status</th>${MONTHS.map(m => `<th scope="col" class="px-4 py-3 min-w-[220px]">${m}</th>`).join('')}</tr></thead><tbody>`;
-        utilities.forEach((util) => {
-            const utilityInfo = UTILITIES.find(u => u.id === util.utilityId);
-            const billKey = `${selectedYear}-${util.utilityId}-${util.accountNumber}`;
-            const monthlyBills = (bills && bills[billKey]) ? bills[billKey] : Array(12).fill({ amount: '', file: '' });
-
-            tableHTML += `<tr class="bg-white border-b hover:bg-slate-50"><td class="px-4 py-3 font-medium text-slate-900 sticky left-0 bg-white z-10">${utilityInfo.name}</td><td class="px-4 py-3 font-mono">${util.accountNumber}</td><td class="px-4 py-3"><span class="px-2 py-1 text-xs font-medium rounded-full ${util.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${util.isActive ? 'Aktif' : 'Tidak Aktif'}</span></td>${MONTHS.map((m, i) => { const billData = monthlyBills[i] || {}; return `<td class="px-2 py-2"><div class="flex items-center gap-1.5"><input type="number" step="0.01" min="0" class="w-24 p-2 border rounded-md bill-input bg-slate-50" placeholder="RM" data-key="${billKey}" data-month-index="${i}" value="${billData.amount || ''}" ${!util.isActive ? 'disabled' : ''}><label class="cursor-pointer" title="${billData.file ? 'Bil Telah Dimuat Naik' : 'Muat Naik Bil'}"><input type="file" class="hidden file-input" data-key="${billKey}" data-month-index="${i}" ${!util.isActive ? 'disabled' : ''}>${billData.file ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>` : `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-400 hover:text-indigo-600" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>`}</label><span class="text-xs text-slate-500 truncate max-w-[60px] file-name-display" title="${billData.file || ''}">${billData.file || ''}</span>${billData.file ? `<button class="clear-file-btn text-slate-400 hover:text-red-500" data-key="${billKey}" data-month-index="${i}" title="Padam Fail">&#x2715;</button>` : ''}</div></td>`}).join('')}</tr>`;
-        });
-        tableHTML += `</tbody></table>`;
-        billingTableContainer.innerHTML = tableHTML;
-    };
-    
-    const renderSchoolStatusTable = (targetTbody, year) => { 
-        let registeredSchools = JSON.parse(localStorage.getItem('myutiliti_registeredSchools')) || [];
-        if (registeredSchools.length === 0 && Object.keys(SCHOOL_DB).length > 0) {
-            Object.keys(SCHOOL_DB).forEach(code => {
-                 registeredSchools.push({ code: code, name: SCHOOL_DB[code] });
-                 if (!getSchoolData(code, 'utilities')) { // Only add dummy data if none exists
-                    const utilCount = Math.floor(Math.random() * 3) + 2; const filledMonths = Math.floor(Math.random() * 11) + 1; let dummyUtils = []; for (let i = 0; i < utilCount; i++) { dummyUtils.push({ utilityId: UTILITIES[i % UTILITIES.length].id, accountNumber: `10000${i}`, isActive: true }); } setSchoolData(code, 'utilities', dummyUtils); let dummyBills = {}; const currentYear = new Date().getFullYear(); dummyUtils.forEach(util => { const billKey = `${currentYear}-${util.utilityId}-${util.accountNumber}`; dummyBills[billKey] = Array(12).fill({}).map((_, m_idx) => m_idx < filledMonths ? { amount: (Math.random() * 200 + 50).toFixed(2), file: 'bil.pdf' } : { amount: '', file: '' }); }); setSchoolData(code, 'bills', dummyBills);
-                 }
             });
-            localStorage.setItem('myutiliti_registeredSchools', JSON.stringify(registeredSchools));
-        }
+        };
 
-        let bodyHTML = '';
-        registeredSchools.forEach(school => {
-            const utilities = getSchoolData(school.code, 'utilities') || []; const activeUtilities = utilities.filter(u => u.isActive); const bills = getSchoolData(school.code, 'bills') || {};
-            bodyHTML += `<tr><td class="px-4 py-3 font-bold">${school.name}</td>`;
-            if (activeUtilities.length === 0) { bodyHTML += `<td colspan="12" class="text-center py-3 text-slate-500">Tiada utiliti aktif.</td>`; }
-            else { MONTHS.forEach((month, index) => { let isMonthComplete = true; for (const util of activeUtilities) { const billKey = `${year}-${util.utilityId}-${util.accountNumber}`; const billData = (bills[billKey] && bills[billKey][index]) ? bills[billKey][index] : { amount: '' }; if (!billData.amount || billData.amount <= 0) { isMonthComplete = false; break; } } const colorClass = isMonthComplete ? 'bg-green-500' : 'bg-red-500'; bodyHTML += `<td class="p-2 text-center"><span class="status-dot inline-block w-4 h-4 rounded-full cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-blue-400 ${colorClass}" title="Lihat Butiran" data-school-code="${school.code}" data-school-name="${school.name}" data-month-index="${index}" data-year="${year}"></span></td>`; }); }
-            bodyHTML += `</tr>`;
-        });
-        targetTbody.innerHTML = bodyHTML;
-    };
-    
-    const populateYearSelectors = (selectors) => { 
-        selectors.forEach(selector => {
-            if(!selector) return;
-            selector.innerHTML = '';
-            const currentYear = new Date().getFullYear();
-            for (let i = currentYear + 1; i >= currentYear - 5; i--) { const option = document.createElement('option'); option.value = i; option.textContent = i; if (i === currentYear) option.selected = true; selector.appendChild(option); }
-        });
-    };
-
-    // --- LOGIK ADMIN ---
-    const populateAdminFilterSelectors = () => {
-        const now = new Date();
-        adminMonthSelector.innerHTML = '';
-        MONTHS.forEach((month, index) => {
-            const option = document.createElement('option');
-            option.value = index;
-            option.textContent = month;
-            if (index === now.getMonth()) option.selected = true;
-            adminMonthSelector.appendChild(option);
-        });
-        populateYearSelectors([adminYearSelector]);
-    };
-
-    const renderAdminDashboard = () => {
-        const selectedMonth = parseInt(adminMonthSelector.value, 10);
-        const selectedYear = adminYearSelector.value;
-        
-        const completedListContainer = document.getElementById('admin-completed-school-list');
-        const incompleteListContainer = document.getElementById('admin-incomplete-school-list');
-        completedListContainer.innerHTML = '';
-        incompleteListContainer.innerHTML = '';
-
-        const schools = JSON.parse(localStorage.getItem('myutiliti_registeredSchools')) || [];
-        if (schools.length === 0) {
-            incompleteListContainer.innerHTML = `<p class="text-slate-500 text-center p-4">Tiada sekolah telah berdaftar.</p>`;
-            return;
-        }
-
-        let completedHTML = '';
-        let incompleteHTML = '';
-
-        schools.forEach(school => {
-            const utilities = getSchoolData(school.code, 'utilities') || []; 
-            const activeUtilities = utilities.filter(u => u.isActive);
-            const bills = getSchoolData(school.code, 'bills') || {};
-            let isComplete = activeUtilities.length > 0;
-            if(activeUtilities.length === 0) isComplete = true; 
-            for (const util of activeUtilities) {
-                const billKey = `${selectedYear}-${util.utilityId}-${util.accountNumber}`;
-                const billData = (bills[billKey] && bills[billKey][selectedMonth]) ? bills[billKey][selectedMonth] : {};
-                if (!billData.amount || billData.amount <= 0) {
-                    isComplete = false;
-                    break;
-                }
+        // --- Fungsi Data Supabase ---
+        const loadSchoolDB = async () => {
+            const { data, error } = await supabaseClient.from('schools').select('code, name');
+            if (error) {
+                console.error("Gagal memuatkan senarai sekolah:", error.message);
+                throw new Error("Tidak dapat memuat turun senarai sekolah.");
             }
+            SCHOOL_DB = data.reduce((acc, school) => { acc[school.code] = school.name; return acc; }, {});
+        };
+        const getSchoolData = async (code) => {
+            const { data, error } = await supabaseClient.from('utilities').select('settings, bills').eq('school_code', code).single();
+            if (error && error.code !== 'PGRST116') throw error; // Abaikan ralat 'No rows found'
+            return data || { settings: [], bills: {} };
+        };
+        const getAllSchoolData = async () => {
+            const { data, error } = await supabaseClient.from('utilities').select('school_code, settings, bills');
+            if(error) {
+                console.error("Gagal memuatkan semua data sekolah:", error);
+                throw new Error("Gagal memuatkan data status sekolah.");
+            }
+            ALL_SCHOOL_DATA = data;
+            return data;
+        };
+        const saveData = async (code, dataObject) => {
+            showLoader();
+            try {
+                const { error } = await supabaseClient.from('utilities').upsert({ school_code: code, ...dataObject }, { onConflict: 'school_code' });
+                if (error) throw error;
+                return true;
+            } catch (error) {
+                console.error("Gagal menyimpan data:", error.message);
+                showToast("Gagal menyimpan data. Sila cuba lagi.", true);
+                return false;
+            } finally {
+                hideLoader();
+            }
+        };
+
+        // --- Logik Render UI ---
+        const renderSetupPage = async () => {
+            const utilityListContainer = document.getElementById('utility-list');
+            utilityListContainer.innerHTML = '';
+            const schoolCode = sessionStorage.getItem('myutiliti_currentSchoolCode');
             
-            const schoolCardHTML = `
-                <button class="w-full p-2.5 border rounded-lg text-left transition focus:outline-none focus:ring-2 focus:ring-indigo-500 ${isComplete ? 'bg-white border-slate-200 hover:bg-slate-50' : 'bg-orange-50 border-orange-200 hover:bg-orange-100'}" data-school-code="${school.code}">
-                    <div class="flex items-center justify-between">
-                        <p class="text-sm font-medium text-slate-800 truncate">${school.name} <span class="text-xs font-normal text-slate-500">(${school.code})</span></p>
-                        ${isComplete ? '<span class="flex-shrink-0 w-2.5 h-2.5 bg-green-500 rounded-full ml-2" title="Selesai"></span>' : ''}
-                    </div>
-                </button>
-            `;
+            showLoader();
+            const { settings: savedUtilities } = await getSchoolData(schoolCode);
+            hideLoader();
 
-            if(isComplete) {
-                completedHTML += schoolCardHTML;
-            } else {
-                incompleteHTML += schoolCardHTML;
-            }
-        });
-
-        if (completedHTML === '') {
-            completedListContainer.innerHTML = `<div class="border-2 border-dashed border-slate-200 rounded-lg p-6 text-center text-slate-500"><p>Tiada sekolah yang telah selesai mengisi bil untuk bulan ini.</p></div>`;
-        } else {
-            completedListContainer.innerHTML = completedHTML;
-        }
-
-        if (incompleteHTML === '') {
-            incompleteListContainer.innerHTML = `<div class="border-2 border-dashed border-green-200 rounded-lg p-6 text-center text-green-600"><p class="font-semibold">Hebat!</p><p>Semua sekolah telah selesai mengisi bil untuk bulan ini.</p></div>`;
-        } else {
-            incompleteListContainer.innerHTML = incompleteHTML;
-        }
-        
-        const adminSummaryTableHead = document.querySelector('#admin-summary-status-section thead');
-        let headerHTML = `<tr><th class="px-4 py-3">Nama Sekolah</th>${MONTHS.map(m => `<th class="px-4 py-3 text-center">${m.substring(0,3)}</th>`).join('')}</tr>`;
-        adminSummaryTableHead.innerHTML = headerHTML;
-        renderSchoolStatusTable(adminSummaryStatusTbody, selectedYear);
-    };
-
-    const renderAdminSchoolView = (schoolCode) => {
-        const schoolName = SCHOOL_DB[schoolCode] || schoolCode;
-        adminViewSchoolName.innerHTML = `${schoolName} <span class="text-sm font-normal text-slate-500">(${schoolCode})</span>`;
-        const utilities = getSchoolData(schoolCode, 'utilities') || [];
-        const year = adminYearSelector.value; 
-        const bills = getSchoolData(schoolCode, 'bills') || {};
-
-        if (utilities.length === 0) { adminBillingTableContainer.innerHTML = `<p class="text-center text-slate-500">Sekolah ini belum menetapkan sebarang utiliti.</p>`; return; }
-
-        let tableHTML = `<table class="w-full text-sm text-left text-slate-500"><thead class="text-xs text-slate-700 uppercase bg-slate-100"><tr><th class="px-4 py-3">Utiliti</th><th class="px-4 py-3">No. Akaun</th>${MONTHS.map(m => `<th class="px-4 py-3 min-w-[250px]">${m}</th>`).join('')}</tr></thead><tbody>`;
-        utilities.forEach(util => {
-            const utilInfo = UTILITIES.find(u => u.id === util.utilityId);
-            tableHTML += `<tr class="bg-white border-b"><td class="px-4 py-3 font-medium text-slate-900">${utilInfo.name}</td><td class="px-4 py-3 font-mono">${util.accountNumber}</td>${MONTHS.map((m, i) => {
-                const billKey = `${year}-${util.utilityId}-${util.accountNumber}`;
-                const billData = (bills[billKey] && bills[billKey][i]) ? bills[billKey][i] : {};
-                const verificationStatus = billData.verifiedBy
-                    ? `<div class="text-xs text-green-700"><p class="font-semibold">Disahkan oleh ${billData.verifiedBy}</p><p>${billData.verifiedAt}</p></div>`
-                    : (billData.amount > 0 ? `<button class="verify-btn text-xs bg-blue-500 text-white py-1 px-2 rounded hover:bg-blue-600" data-school-code="${schoolCode}" data-key="${billKey}" data-month-index="${i}">Sahkan</button>` : `<span class="text-xs text-slate-400">Belum diisi</span>`);
+            UTILITIES.forEach(utility => {
+                const utilityDiv = document.createElement('div');
+                utilityDiv.className = 'p-4 border border-slate-200 rounded-lg';
+                utilityDiv.innerHTML = `<div class="flex justify-between items-center"><h3 class="text-lg font-semibold text-slate-700">${utility.name}</h3><button data-utility-id="${utility.id}" class="add-account-btn bg-indigo-100 text-indigo-700 font-semibold text-sm py-1 px-3 rounded-full hover:bg-indigo-200 transition">+ Tambah Akaun</button></div><div id="${utility.id}-accounts-container" class="mt-4 space-y-3"></div>`;
+                utilityListContainer.appendChild(utilityDiv);
                 
-                return `<td class="px-4 py-3 align-top"><div class="flex flex-col gap-2"><div><p class="text-xs text-slate-500">Jumlah: <span class="font-bold text-base text-slate-800">RM ${billData.amount || '0.00'}</span></p><p class="text-xs text-slate-500 truncate">Fail: ${billData.file || 'Tiada'}</p></div><div>${verificationStatus}</div></div></td>`;
-            }).join('')}</tr>`;
-        });
-        tableHTML += `</tbody></table>`;
-        adminBillingTableContainer.innerHTML = tableHTML;
-    };
-
-    const showDetailsModal = (schoolCode, schoolName, monthIndex, year) => {
-        detailsModalTitle.textContent = `Butiran Bil untuk ${schoolName} - ${MONTHS[monthIndex]} ${year}`;
-        const utilities = getSchoolData(schoolCode, 'utilities') || [];
-        const activeUtilities = utilities.filter(u => u.isActive);
-        const bills = getSchoolData(schoolCode, 'bills') || {};
+                const accountsForUtility = savedUtilities.filter(u => u.utilityId === utility.id);
+                if (accountsForUtility.length > 0) {
+                    accountsForUtility.forEach(acc => addAccountRow(utility.id, acc.accountNumber, acc.isActive));
+                } else {
+                    addAccountRow(utility.id);
+                }
+            });
+        };
         
-        if (activeUtilities.length === 0) {
-            detailsModalBody.innerHTML = `<p class="text-slate-500">Tiada utiliti aktif ditetapkan untuk sekolah ini.</p>`;
-        } else {
-            let bodyHTML = '<div class="space-y-3">';
+        const addAccountRow = (utilityId, accountNumber = '', isActive = true) => {
+            const container = document.getElementById(`${utilityId}-accounts-container`);
+            if (!container) return;
+            const accountRow = document.createElement('div');
+            accountRow.className = 'flex items-center gap-3 p-3 bg-slate-50 rounded-md';
+            accountRow.innerHTML = `<input type="text" value="${accountNumber}" placeholder="No. Akaun" class="account-number-input flex-grow px-3 py-2 border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500"><label class="flex items-center cursor-pointer"><div class="relative"><input type="checkbox" class="sr-only toggle-checkbox account-active-checkbox" ${isActive ? 'checked' : ''}><div class="block bg-slate-300 w-12 h-6 rounded-full toggle-label transition"></div><div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full"></div></div><span class="ml-3 text-sm font-medium text-slate-600">Aktif</span></label><button class="remove-account-btn text-slate-400 hover:text-red-500 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg></button>`;
+            container.appendChild(accountRow);
+            
+            const checkbox = accountRow.querySelector('.toggle-checkbox');
+            checkbox.addEventListener('change', (e) => {
+                const dot = e.target.closest('.relative').querySelector('.dot');
+                const labelBg = e.target.closest('.relative').querySelector('.toggle-label');
+                if (e.target.checked) {
+                    dot.style.transform = 'translateX(1.5rem)';
+                    labelBg.classList.replace('bg-slate-300', 'bg-indigo-600');
+                } else {
+                    dot.style.transform = 'translateX(0)';
+                    labelBg.classList.replace('bg-indigo-600', 'bg-slate-300');
+                }
+            });
+            checkbox.dispatchEvent(new Event('change')); // Trigger initial style
+        };
+
+        const renderDashboard = async () => {
+            showLoader();
+            const schoolCode = sessionStorage.getItem('myutiliti_currentSchoolCode');
+            const schoolName = SCHOOL_DB[schoolCode] || schoolCode;
+            const { settings: utilities, bills } = await getSchoolData(schoolCode);
+            const selectedYear = yearSelector.value;
+            
+            dashboardSchoolCode.innerHTML = `${schoolName} <span class="text-sm font-normal text-slate-500">(${schoolCode})</span>`;
+
+            // Kad Ringkasan
+            const activeUtilities = utilities.filter(u => u.isActive);
+            document.getElementById('summary-active-utilities').textContent = activeUtilities.length;
+            
+            let unfilledBillsCount = 0;
+            const currentYear = new Date().getFullYear().toString();
             activeUtilities.forEach(util => {
-                const utilInfo = UTILITIES.find(u => u.id === util.utilityId);
-                const billKey = `${year}-${util.utilityId}-${util.accountNumber}`;
-                const billData = (bills[billKey] && bills[billKey][monthIndex]) ? bills[billKey][monthIndex] : {};
-                bodyHTML += `
-                    <div class="p-3 bg-slate-50 rounded-md border">
-                        <p class="font-semibold">${utilInfo.name} (${util.accountNumber})</p>
-                        <p class="text-sm">Jumlah: <span class="font-bold">RM ${billData.amount || '0.00'}</span></p>
-                        <p class="text-sm">Fail: <span class="text-blue-600">${billData.file || 'Tiada'}</span></p>
-                        ${billData.verifiedBy ? `<p class="text-xs text-green-600 mt-1">Telah disahkan oleh ${billData.verifiedBy} pada ${billData.verifiedAt}</p>` : `<p class="text-xs text-orange-600 mt-1">Belum disahkan</p>`}
-                    </div>
-                `;
+                for (let i = 0; i < 12; i++) {
+                    const billKey = `${currentYear}-${util.utilityId}-${util.accountNumber}`;
+                    const billData = (bills[billKey] && bills[billKey][i]) ? bills[billKey][i] : {};
+                    if (!billData.amount || parseFloat(billData.amount) <= 0) {
+                        unfilledBillsCount++;
+                    }
+                }
             });
-            bodyHTML += '</div>';
-            detailsModalBody.innerHTML = bodyHTML;
-        }
-        detailsModal.classList.remove('hidden');
-    };
-    
-    const generatePrintableForm = () => {
-        const month = MONTHS[adminMonthSelector.value];
-        const year = adminYearSelector.value;
-        const schools = JSON.parse(localStorage.getItem('myutiliti_registeredSchools')) || [];
-        
-        let schoolListHTML = schools.map((school, index) => `<li>${school.name}</li>`).join('');
+            document.getElementById('summary-unfilled-bills').textContent = unfilledBillsCount;
 
-        const printContent = `
-            <html>
-            <head>
-                <title>Borang Pengesahan Pembayaran Bil Utiliti - ${month} ${year}</title>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 40px; }
-                    h1, h2 { text-align: center; }
-                    p { line-height: 1.6; }
-                    ol { padding-left: 20px; }
-                    .signature-section { margin-top: 80px; display: grid; grid-template-columns: 1fr 1fr; gap: 100px; }
-                    .signature-box { margin-top: 60px; border-top: 1px solid #000; padding-top: 10px; }
-                </style>
-            </head>
-            <body>
-                <h1>Borang Pengesahan Pembayaran Bil Utiliti</h1>
-                <h2>Sekolah-sekolah Daerah Miri</h2>
-                <br>
-                <p><strong>Bulan:</strong> ${month}</p>
-                <p><strong>Tahun:</strong> ${year}</p>
-                <br>
-                <p>Dengan ini, disahkan bahawa semakan pembayaran bil utiliti bagi bulan dan tahun di atas telah dibuat untuk sekolah-sekolah berikut:</p>
-                <ol>${schoolListHTML}</ol>
-                <br>
-                <div class="signature-section">
-                    <div>
-                        <p>Disediakan oleh,</p>
-                        <div class="signature-box">
-                            <p>(..................................................)</p>
-                            <p><strong>Nama:</strong></p>
-                            <p><strong>Jawatan:</strong> Pegawai ICT PPD Miri</p>
+            const now = new Date();
+            const currentMonthIndex = now.getMonth();
+            let pendingUtilities = [];
+            let allCurrentMonthBillsFilled = activeUtilities.length > 0;
+            if(activeUtilities.length === 0) allCurrentMonthBillsFilled = true;
+
+            activeUtilities.forEach(util => {
+                const billKey = `${currentYear}-${util.utilityId}-${util.accountNumber}`;
+                const billData = (bills[billKey] && bills[billKey][currentMonthIndex]) ? bills[billKey][currentMonthIndex] : {};
+                if (!billData.amount || parseFloat(billData.amount) <= 0) {
+                    allCurrentMonthBillsFilled = false;
+                    pendingUtilities.push(UTILITIES.find(u => u.id === util.utilityId).name);
+                }
+            });
+            
+            document.getElementById('summary-current-month-title').textContent = `Status Bulan Semasa (${MONTHS[currentMonthIndex]})`;
+            const statusEl = document.getElementById('summary-current-month-status');
+            if (allCurrentMonthBillsFilled) {
+                statusEl.innerHTML = `<div class="flex items-center gap-2 mt-2"><span class="flex-shrink-0 bg-green-100 text-green-700 rounded-full p-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg></span><p class="text-lg font-bold text-green-700">Selesai</p></div><p class="text-xs text-slate-500 mt-1">Semua bil untuk bulan ini telah diisi.</p>`;
+            } else {
+                statusEl.innerHTML = `<div class="flex items-center gap-2 mt-2"><span class="flex-shrink-0 bg-orange-100 text-orange-700 rounded-full p-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></span><p class="text-lg font-bold text-orange-700">Belum Selesai</p></div><p class="text-xs text-slate-500 mt-1">Sila isi bil untuk: ${[...new Set(pendingUtilities)].join(', ')}.</p>`;
+            }
+            
+            // Jadual Bil
+            if (utilities.length === 0) {
+                billingTableContainer.innerHTML = `<p class="p-4 text-center text-slate-500">Tiada data utiliti. Sila ke 'Ubah Tetapan'.</p>`;
+                hideLoader();
+                return;
+            }
+
+            let tableHTML = `<table class="w-full text-sm text-left text-slate-500"><thead class="text-xs text-slate-700 uppercase bg-slate-100"><tr><th scope="col" class="px-4 py-3 sticky left-0 bg-slate-100 z-10 min-w-[120px]">Utiliti</th><th scope="col" class="px-4 py-3 min-w-[150px]">No. Akaun</th><th scope="col" class="px-4 py-3">Status</th>${MONTHS.map(m => `<th scope="col" class="px-4 py-3 min-w-[220px]">${m}</th>`).join('')}</tr></thead><tbody>`;
+            utilities.forEach((util) => {
+                const utilityInfo = UTILITIES.find(u => u.id === util.utilityId);
+                tableHTML += `<tr class="bg-white border-b hover:bg-slate-50"><td class="px-4 py-3 font-medium text-slate-900 sticky left-0 bg-white z-10">${utilityInfo.name}</td><td class="px-4 py-3 font-mono">${util.accountNumber}</td><td class="px-4 py-3"><span class="px-2 py-1 text-xs font-medium rounded-full ${util.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${util.isActive ? 'Aktif' : 'Tidak Aktif'}</span></td>${MONTHS.map((m, i) => {
+                    const billKey = `${selectedYear}-${util.utilityId}-${util.accountNumber}`;
+                    const billData = (bills[billKey] && bills[billKey][i]) ? bills[billKey][i] : { amount: '', file: '' };
+                    return `<td class="px-2 py-2"><div class="flex items-center gap-1.5"><input type="number" step="0.01" min="0" class="w-24 p-2 border rounded-md bill-input bg-slate-50" placeholder="RM" data-key="${billKey}" data-month-index="${i}" value="${billData.amount || ''}" ${!util.isActive ? 'disabled' : ''}><label class="cursor-pointer" title="${billData.file ? 'Bil Telah Dimuat Naik' : 'Muat Naik Bil'}"><input type="file" class="hidden file-input" data-key="${billKey}" data-month-index="${i}" ${!util.isActive ? 'disabled' : ''}>${billData.file ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>` : `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-400 hover:text-indigo-600" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>`}</label><span class="text-xs text-slate-500 truncate max-w-[60px] file-name-display" title="${billData.file || ''}">${billData.file || ''}</span>${billData.file ? `<button class="clear-file-btn text-slate-400 hover:text-red-500" data-key="${billKey}" data-month-index="${i}" title="Padam Fail">&#x2715;</button>` : ''}</div></td>`
+                }).join('')}</tr>`;
+            });
+            tableHTML += `</tbody></table>`;
+            billingTableContainer.innerHTML = tableHTML;
+            hideLoader();
+        };
+
+        const renderSchoolStatusTable = async (targetTbody, year) => {
+            showLoader();
+            try {
+                // Fetch latest data if cache is empty
+                if (ALL_SCHOOL_DATA.length === 0) await getAllSchoolData();
+
+                let bodyHTML = '';
+                Object.keys(SCHOOL_DB).sort((a,b) => SCHOOL_DB[a].localeCompare(SCHOOL_DB[b])).forEach(schoolCode => {
+                    const schoolData = ALL_SCHOOL_DATA.find(d => d.school_code === schoolCode);
+                    const utilities = schoolData?.settings || [];
+                    const bills = schoolData?.bills || {};
+                    const activeUtilities = utilities.filter(u => u.isActive);
+                    
+                    bodyHTML += `<tr><td class="px-4 py-3 font-medium text-slate-900">${SCHOOL_DB[schoolCode]}</td>`;
+                    
+                    if (activeUtilities.length === 0) {
+                        bodyHTML += `<td colspan="12" class="px-4 py-3 text-center text-slate-400">Tiada utiliti aktif</td>`;
+                    } else {
+                        MONTHS.forEach((month, index) => {
+                            let isMonthComplete = true;
+                            for (const util of activeUtilities) {
+                                const billKey = `${year}-${util.utilityId}-${util.accountNumber}`;
+                                const billData = (bills[billKey] && bills[billKey][index]) ? bills[billKey][index] : { amount: '' };
+                                if (!billData.amount || billData.amount <= 0) {
+                                    isMonthComplete = false;
+                                    break;
+                                }
+                            }
+                            const colorClass = isMonthComplete ? 'bg-green-500' : 'bg-red-500';
+                            bodyHTML += `<td class="p-2 text-center"><span class="status-dot inline-block w-4 h-4 rounded-full cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-blue-400 ${colorClass}" title="Lihat Butiran" data-school-code="${schoolCode}" data-school-name="${SCHOOL_DB[schoolCode]}" data-month-index="${index}" data-year="${year}"></span></td>`;
+                        });
+                    }
+                    bodyHTML += `</tr>`;
+                });
+                targetTbody.innerHTML = bodyHTML;
+
+            } catch (error) {
+                targetTbody.innerHTML = `<tr><td colspan="13" class="text-center p-4 text-red-500">${error.message}</td></tr>`;
+            } finally {
+                hideLoader();
+            }
+        };
+
+        const renderAdminDashboard = async () => {
+            showLoader();
+            const selectedMonth = parseInt(adminMonthSelector.value, 10);
+            const selectedYear = adminYearSelector.value;
+            
+            await getAllSchoolData(); // Refresh data
+
+            const completedListContainer = document.getElementById('admin-completed-school-list');
+            const incompleteListContainer = document.getElementById('admin-incomplete-school-list');
+            completedListContainer.innerHTML = '';
+            incompleteListContainer.innerHTML = '';
+
+            let completedCount = 0;
+            let incompleteCount = 0;
+
+            Object.keys(SCHOOL_DB).sort((a,b) => SCHOOL_DB[a].localeCompare(SCHOOL_DB[b])).forEach(schoolCode => {
+                const schoolData = ALL_SCHOOL_DATA.find(d => d.school_code === schoolCode) || {};
+                const activeUtilities = (schoolData.settings || []).filter(u => u.isActive);
+                const bills = schoolData.bills || {};
+                let isComplete = activeUtilities.length > 0;
+                if(activeUtilities.length === 0) isComplete = true; 
+                
+                for (const util of activeUtilities) {
+                    const billKey = `${selectedYear}-${util.utilityId}-${util.accountNumber}`;
+                    const billData = (bills[billKey] && bills[billKey][selectedMonth]) ? bills[billKey][selectedMonth] : {};
+                    if (!billData.amount || billData.amount <= 0) {
+                        isComplete = false;
+                        break;
+                    }
+                }
+                
+                const schoolCardHTML = `
+                    <button class="w-full p-2.5 border rounded-lg text-left transition focus:outline-none focus:ring-2 focus:ring-indigo-500 ${isComplete ? 'bg-white border-slate-200 hover:bg-slate-50' : 'bg-orange-50 border-orange-200 hover:bg-orange-100'}" data-school-code="${schoolCode}">
+                        <div class="flex items-center justify-between">
+                            <p class="text-sm font-medium text-slate-800 truncate">${SCHOOL_DB[schoolCode]} <span class="text-xs font-normal text-slate-500">(${schoolCode})</span></p>
+                            ${isComplete ? '<span class="flex-shrink-0 w-2.5 h-2.5 bg-green-500 rounded-full ml-2" title="Selesai"></span>' : ''}
                         </div>
-                    </div>
-                    <div>
-                        <p>Disahkan oleh,</p>
-                        <div class="signature-box">
-                            <p>(..................................................)</p>
-                             <p><strong>Nama:</strong></p>
-                            <p><strong>Jawatan:</strong> Pegawai Atasan</p>
-                        </div>
-                    </div>
-                </div>
-            </body>
-            </html>
-        `;
+                    </button>`;
+
+                if (isComplete) {
+                    completedListContainer.innerHTML += schoolCardHTML;
+                    completedCount++;
+                } else {
+                    incompleteListContainer.innerHTML += schoolCardHTML;
+                    incompleteCount++;
+                }
+            });
+
+            if (completedCount === 0) completedListContainer.innerHTML = `<div class="border-2 border-dashed border-slate-200 rounded-lg p-6 text-center text-slate-500"><p>Tiada sekolah yang telah selesai.</p></div>`;
+            if (incompleteCount === 0) incompleteListContainer.innerHTML = `<div class="border-2 border-dashed border-green-200 rounded-lg p-6 text-center text-green-600"><p class="font-semibold">Hebat!</p><p>Semua sekolah telah selesai.</p></div>`;
+
+            const adminSummaryTableHead = document.querySelector('#admin-summary-status-section thead');
+            adminSummaryTableHead.innerHTML = `<tr><th class="px-4 py-3">Nama Sekolah</th>${MONTHS.map(m => `<th class="px-4 py-3 text-center">${m.substring(0,3)}</th>`).join('')}</tr>`;
+            await renderSchoolStatusTable(adminSummaryStatusTbody, selectedYear);
+            hideLoader();
+        };
         
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(printContent);
-        printWindow.document.close();
-        printWindow.print();
-    };
+        // --- Pengendali Acara (Event Handlers) ---
+        verifyButton.addEventListener('click', async () => {
+            const code = schoolCodeInput.value.trim().toUpperCase();
+            if (!code) return showToast('Sila masukkan Kod Sekolah.', true);
+            if (!SCHOOL_DB[code]) return showToast('Kod sekolah tidak sah. Sila hubungi admin.', true);
 
+            sessionStorage.setItem('myutiliti_currentSchoolCode', code);
+            
+            showLoader();
+            const { settings } = await getSchoolData(code);
+            hideLoader();
 
-    // --- Pengendali Acara (Event Handlers) ---
-    verifyButton.addEventListener('click', () => { 
-        const code = schoolCodeInput.value.trim().toUpperCase();
-        if (!code) { alert('Sila masukkan Kod Sekolah.'); return; }
-        if (!SCHOOL_DB[code]) { alert('Kod sekolah tidak sah. Sila hubungi admin untuk mendaftar.'); return; }
+            if (settings && settings.length > 0) {
+                await renderDashboard();
+                showPage('dashboard');
+            } else {
+                await renderSetupPage();
+                showPage('setup');
+            }
+        });
 
-        localStorage.setItem('myutiliti_currentSchoolCode', code);
-        
-        let schools = JSON.parse(localStorage.getItem('myutiliti_registeredSchools')) || [];
-        if (!schools.some(s => s.code === code)) {
-            schools.push({ code: code, name: SCHOOL_DB[code] });
-            localStorage.setItem('myutiliti_registeredSchools', JSON.stringify(schools));
-        }
-        
-        getSchoolData(code, 'utilities') ? (renderDashboard(), showPage('dashboard')) : (renderSetupPage(), showPage('setup'));
-    });
-
-    saveSetupButton.addEventListener('click', () => { 
-        const allUtilities = []; const schoolCode = localStorage.getItem('myutiliti_currentSchoolCode');
-        UTILITIES.forEach(utility => {
-            document.querySelectorAll(`#${utility.id}-accounts-container .flex.items-center.gap-3`).forEach(row => {
+        saveSetupButton.addEventListener('click', async () => {
+            const schoolCode = sessionStorage.getItem('myutiliti_currentSchoolCode');
+            const allUtilities = [];
+            document.querySelectorAll('#utility-list .flex.items-center.gap-3').forEach(row => {
                 const accountNumber = row.querySelector('.account-number-input').value.trim();
-                if (accountNumber) { allUtilities.push({ utilityId: utility.id, accountNumber: accountNumber, isActive: row.querySelector('.account-active-checkbox').checked }); }
+                if (accountNumber) {
+                    const utilityId = row.closest('.p-4.border').querySelector('.add-account-btn').dataset.utilityId;
+                    allUtilities.push({
+                        utilityId: utilityId,
+                        accountNumber: accountNumber,
+                        isActive: row.querySelector('.account-active-checkbox').checked
+                    });
+                }
             });
+
+            if (await saveData(schoolCode, { settings: allUtilities })) {
+                showToast('Tetapan utiliti berjaya disimpan!');
+                await renderDashboard();
+                showPage('dashboard');
+            }
         });
-        setSchoolData(schoolCode, 'utilities', allUtilities); showToast('Tetapan utiliti berjaya disimpan!'); renderDashboard(); showPage('dashboard');
-    });
 
-    saveBillsButton.addEventListener('click', () => { 
-        const schoolCode = localStorage.getItem('myutiliti_currentSchoolCode'); const bills = getSchoolData(schoolCode, 'bills') || {};
-        document.querySelectorAll('.bill-input, .file-input').forEach(input => {
-            const key = input.dataset.key; const monthIndex = parseInt(input.dataset.monthIndex, 10);
-            if (!bills[key]) bills[key] = Array(12).fill({}).map(() => ({ amount: '', file: '', verifiedBy: '', verifiedAt: '' }));
-            if (input.classList.contains('bill-input')) { bills[key][monthIndex].amount = input.value; }
-            if (input.classList.contains('file-input')) { const fileName = input.parentElement.parentElement.querySelector('.file-name-display').textContent; bills[key][monthIndex].file = fileName; }
+        saveBillsButton.addEventListener('click', async () => {
+            const schoolCode = sessionStorage.getItem('myutiliti_currentSchoolCode');
+            const { bills } = await getSchoolData(schoolCode); // Dapatkan data bil sedia ada
+            
+            document.querySelectorAll('.bill-input').forEach(input => {
+                const key = input.dataset.key;
+                const monthIndex = parseInt(input.dataset.monthIndex, 10);
+                if (!bills[key]) bills[key] = Array(12).fill({}).map(() => ({ amount: '', file: '', verifiedBy: '', verifiedAt: '' }));
+                bills[key][monthIndex].amount = input.value;
+            });
+
+             if(await saveData(schoolCode, { bills: bills })) {
+                showToast('Rekod bil berjaya disimpan!');
+                await renderDashboard(); // Muat semula untuk papar data terkini
+             }
         });
-        setSchoolData(schoolCode, 'bills', bills); showToast('Rekod bil berjaya disimpan!'); renderDashboard(); renderSchoolStatusTable(schoolStatusTbody, yearSelector.value);
+
+        // --- Inisialisasi Aplikasi ---
+        const initializeApp = async () => {
+            showLoader();
+            try {
+                await loadSchoolDB();
+                populateYearSelectors([yearSelector, statusYearSelector, adminYearSelector]);
+                
+                if (sessionStorage.getItem('myutiliti_isAdmin') === 'true') {
+                    populateAdminFilterSelectors();
+                    await renderAdminDashboard();
+                    showPage('adminDashboard');
+                } else {
+                    const currentSchoolCode = sessionStorage.getItem('myutiliti_currentSchoolCode');
+                    const mainStatusThead = document.querySelector('#school-status-section thead');
+                    mainStatusThead.innerHTML = `<tr><th class="px-4 py-3">Nama Sekolah</th>${MONTHS.map(m => `<th class="px-4 py-3 text-center">${m.substring(0,3)}</th>`).join('')}</tr>`;
+                    await renderSchoolStatusTable(schoolStatusTbody, statusYearSelector.value);
+
+                    if (!currentSchoolCode) {
+                        showPage('verification');
+                    } else {
+                        await renderDashboard();
+                        showPage('dashboard');
+                    }
+                }
+            } catch (error) {
+                alert(error.message);
+                document.body.innerHTML = `<div class="text-center text-red-600">${error.message}</div>`;
+            } finally {
+                hideLoader();
+            }
+        };
+
+        initializeApp();
+
+        // Tambah semua event listener lain di sini
+        // (logout, edit settings, admin login, etc.)
+        // Pastikan fungsi yang dipanggil adalah 'async' jika ia berurusan dengan Supabase
+        logoutButton.addEventListener('click', () => {
+            sessionStorage.removeItem('myutiliti_currentSchoolCode');
+            location.reload();
+        });
+
+        editSettingsButton.addEventListener('click', async () => {
+            await renderSetupPage();
+            showPage('setup');
+        });
+
+        yearSelector.addEventListener('change', renderDashboard);
+        statusYearSelector.addEventListener('change', (e) => renderSchoolStatusTable(schoolStatusTbody, e.target.value));
+
     });
-    
-    adminLoginButton.addEventListener('click', () => {
-        adminLoginModal.classList.remove('hidden');
-        adminPasswordInput.focus();
-    });
-
-    cancelAdminLogin.addEventListener('click', () => {
-        adminLoginModal.classList.add('hidden');
-        adminPasswordInput.value = '';
-        adminLoginError.classList.add('hidden');
-    });
-
-    submitAdminLogin.addEventListener('click', () => {
-        const pass = adminPasswordInput.value;
-        if (pass === "admin123") { // Kata laluan ringkas untuk demo
-            localStorage.setItem('myutiliti_isAdmin', 'true');
-            adminLoginModal.classList.add('hidden');
-            adminPasswordInput.value = '';
-            adminLoginError.classList.add('hidden');
-            populateAdminFilterSelectors();
-            renderAdminDashboard();
-            showPage('adminDashboard');
-        } else {
-            adminLoginError.classList.remove('hidden');
-        }
-    });
-
-    addSchoolButton.addEventListener('click', () => {
-        addSchoolModal.classList.remove('hidden');
-        newSchoolCodeInput.focus();
-    });
-    cancelAddSchool.addEventListener('click', () => {
-        addSchoolModal.classList.add('hidden');
-        newSchoolCodeInput.value = '';
-        newSchoolNameInput.value = '';
-        addSchoolError.classList.add('hidden');
-    });
-    submitAddSchool.addEventListener('click', () => {
-        const newCode = newSchoolCodeInput.value.trim().toUpperCase();
-        const newName = newSchoolNameInput.value.trim();
-        addSchoolError.classList.add('hidden');
-
-        if(!newCode || !newName) {
-            addSchoolError.textContent = 'Sila isi kedua-dua medan.';
-            addSchoolError.classList.remove('hidden');
-            return;
-        }
-        if(SCHOOL_DB[newCode]) {
-            addSchoolError.textContent = 'Kod sekolah ini sudah wujud.';
-            addSchoolError.classList.remove('hidden');
-            return;
-        }
-
-        SCHOOL_DB[newCode] = newName;
-        localStorage.setItem('myutiliti_schoolDB', JSON.stringify(SCHOOL_DB));
-        
-        let schools = JSON.parse(localStorage.getItem('myutiliti_registeredSchools')) || [];
-        if (!schools.some(s => s.code === newCode)) {
-            schools.push({ code: newCode, name: newName });
-            localStorage.setItem('myutiliti_registeredSchools', JSON.stringify(schools));
-        }
-
-        showToast(`Sekolah "${newName}" berjaya ditambah.`);
-        addSchoolModal.classList.add('hidden');
-        newSchoolCodeInput.value = '';
-        newSchoolNameInput.value = '';
-        renderAdminDashboard();
-    });
-
-    adminLogoutButton.addEventListener('click', () => {
-        localStorage.removeItem('myutiliti_isAdmin');
-        location.reload();
-    });
-
-    adminSchoolListContainer.addEventListener('click', e => {
-        const schoolButton = e.target.closest('button');
-        if (schoolButton && schoolButton.dataset.schoolCode) {
-            const schoolCode = schoolButton.dataset.schoolCode;
-            renderAdminSchoolView(schoolCode);
-            showPage('adminSchoolView');
-        }
-    });
-
-    backToAdminDashboard.addEventListener('click', () => {
-        renderAdminDashboard();
-        showPage('adminDashboard');
-    });
-
-    adminBillingTableContainer.addEventListener('click', e => {
-        if (e.target.classList.contains('verify-btn')) {
-            const btn = e.target;
-            const schoolCode = btn.dataset.schoolCode;
-            const key = btn.dataset.key;
-            const monthIndex = parseInt(btn.dataset.monthIndex, 10);
-            const bills = getSchoolData(schoolCode, 'bills') || {};
-
-            if (!bills[key]) bills[key] = Array(12).fill({}).map(() => ({ amount: '', file: '', verifiedBy: '', verifiedAt: '' }));
-            
-            bills[key][monthIndex].verifiedBy = 'Admin PPD';
-            bills[key][monthIndex].verifiedAt = new Date().toLocaleString('ms-MY', { dateStyle: 'medium', timeStyle: 'short' });
-
-            setSchoolData(schoolCode, 'bills', bills);
-            showToast('Bil berjaya disahkan!');
-            renderAdminSchoolView(schoolCode); // Muat semula paparan
-        }
-    });
-
-    document.getElementById('utility-list').addEventListener('click', (e) => { if (e.target.closest('.add-account-btn')) { addAccountRow(e.target.closest('.add-account-btn').dataset.utilityId); } if (e.target.closest('.remove-account-btn')) { e.target.closest('.remove-account-btn').parentElement.remove(); } });
-    billingTableContainer.addEventListener('change', e => { if (e.target.classList.contains('file-input')) { const file = e.target.files[0]; const display = e.target.parentElement.parentElement.querySelector('.file-name-display'); if (file) { display.textContent = file.name; display.title = file.name; renderDashboard(); } } });
-    billingTableContainer.addEventListener('click', e => { if (e.target.closest('.clear-file-btn')) { const btn = e.target.closest('.clear-file-btn'); const key = btn.dataset.key; const monthIndex = parseInt(btn.dataset.monthIndex, 10); const schoolCode = localStorage.getItem('myutiliti_currentSchoolCode'); const bills = getSchoolData(schoolCode, 'bills') || {}; if (bills[key] && bills[key][monthIndex]) { bills[key][monthIndex].file = ''; setSchoolData(schoolCode, 'bills', bills); } renderDashboard(); } });
-    
-    yearSelector.addEventListener('change', renderDashboard);
-    statusYearSelector.addEventListener('change', (e) => renderSchoolStatusTable(schoolStatusTbody, e.target.value));
-    adminMonthSelector.addEventListener('change', renderAdminDashboard);
-    adminYearSelector.addEventListener('change', renderAdminDashboard);
-
-    editSettingsButton.addEventListener('click', () => { renderSetupPage(); showPage('setup'); });
-    logoutButton.addEventListener('click', () => { localStorage.removeItem('myutiliti_currentSchoolCode'); location.reload(); });
-    
-    document.body.addEventListener('click', e => {
-        if(e.target.classList.contains('status-dot')) {
-            const {schoolCode, schoolName, monthIndex, year} = e.target.dataset;
-            showDetailsModal(schoolCode, schoolName, parseInt(monthIndex, 10), year);
-        }
-    });
-
-    closeDetailsModal.addEventListener('click', () => detailsModal.classList.add('hidden'));
-    
-    printFormButton.addEventListener('click', generatePrintableForm);
-
-
-    // Inisialisasi Aplikasi
-    const initializeApp = () => {
-        loadSchoolDB();
-        populateYearSelectors([yearSelector, statusYearSelector]);
-        if (localStorage.getItem('myutiliti_isAdmin') === 'true') {
-            populateAdminFilterSelectors();
-            renderAdminDashboard();
-            showPage('adminDashboard');
-        } else {
-            const currentSchoolCode = localStorage.getItem('myutiliti_currentSchoolCode');
-            // FIX: Tambah kod untuk render header jadual status utama
-            const mainStatusThead = document.querySelector('#school-status-section thead');
-            let headerHTML = `<tr><th class="px-4 py-3">Nama Sekolah</th>${MONTHS.map(m => `<th class="px-4 py-3 text-center">${m.substring(0,3)}</th>`).join('')}</tr>`;
-            mainStatusThead.innerHTML = headerHTML;
-            renderSchoolStatusTable(schoolStatusTbody, statusYearSelector.value);
-            
-            if (!currentSchoolCode) { showPage('verification'); }
-            else { renderDashboard(); showPage('dashboard'); }
-        }
-    };
-    initializeApp();
-});
 </script>
 
 </body>
 </html>
+
